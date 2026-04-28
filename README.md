@@ -1,75 +1,66 @@
-# React + TypeScript + Vite
+# Interval Timer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first workout interval timer built with React 19, TypeScript, and Tailwind CSS v4. Configure work/rest durations and number of sets, then go fullscreen with audio cues and a live progress ring.
 
-Currently, two official plugins are available:
+![Interval Timer screenshot](docs/screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Configurable intervals** — set work time, rest time, and number of sets via sliders or +/− buttons
+- **3-2-1 countdown sounds** — audio cues at the last 3 seconds of every phase
+- **Phase audio** — distinct sounds for work start, rest start, and workout finish
+- **Volume control** — slider and mute toggle, persisted to `localStorage`
+- **Fullscreen + Wake Lock** — screen stays on and goes fullscreen during a workout
+- **Progress ring** — animated SVG ring with per-phase color theming
+- **PWA-ready** — viewport and theme-color meta tags, custom icon
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Stack
 
-Note: This will impact Vite dev & build performances.
+| Tool         | Version                  |
+| ------------ | ------------------------ |
+| React        | 19 (with React Compiler) |
+| TypeScript   | 5                        |
+| Vite         | 8                        |
+| Tailwind CSS | v4                       |
+| React Router | v7                       |
+| Howler.js    | 2                        |
+| Lucide React | latest                   |
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+```
+
+Output goes to `dist/`.
+
+## Project Structure
+
+```
+src/
+  components/
+    setup/
+      NumberInput.tsx      # Work/rest/sets input card
+    timer/
+      ProgressRing.tsx     # Animated SVG progress ring
+      phaseStyles.ts       # Per-phase colors and labels
+    ui/
+      button.tsx           # Base button component
+  hooks/
+    useIntervalTimer.ts    # Timer state machine
+    useAudioSettings.ts    # Volume + mute, persisted to localStorage
+  lib/
+    audio.ts               # Howler.js sound playback
+  pages/
+    SetupPage.tsx          # Setup form
+    TimerPage.tsx          # Fullscreen active timer
 ```
