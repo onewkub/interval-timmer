@@ -6,6 +6,12 @@ export interface PhaseStyle {
 }
 
 export const PHASE_STYLES: Record<string, PhaseStyle> = {
+  countdown: {
+    label: "GET READY",
+    color: "text-sky-400",
+    ringColor: "#38bdf8",
+    bg: "from-zinc-950 via-sky-950/30 to-zinc-950",
+  },
   work: {
     label: "WORK",
     color: "text-orange-400",

@@ -88,7 +88,8 @@ export function TimerPage() {
 
   // Calculate ring progress (1 → 0 as time counts down)
   let phaseDuration = 1;
-  if (phase === "work") phaseDuration = config.workSeconds;
+  if (phase === "countdown") phaseDuration = 3;
+  else if (phase === "work") phaseDuration = config.workSeconds;
   else if (phase === "rest") phaseDuration = config.restSeconds;
 
   const progress = phase === "done" ? 1 : timeRemaining / phaseDuration;
@@ -121,7 +122,7 @@ export function TimerPage() {
           {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
 
-        {isActive && (
+        {isActive && phase !== "countdown" && (
           <div className="flex flex-col items-end text-right">
             <span className="text-xs uppercase tracking-widest text-white/40">
               Set
@@ -198,6 +199,8 @@ export function TimerPage() {
               Back to Setup
             </button>
           </>
+        ) : phase === "countdown" ? (
+          <div className="w-full py-4" aria-hidden />
         ) : (
           <button
             onClick={isPaused ? resume : pause}

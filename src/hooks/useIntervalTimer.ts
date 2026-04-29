@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playCountdown, playFinish, playRest, playWork } from "@/lib/audio";
 
-export type Phase = "idle" | "work" | "rest" | "done";
+export type Phase = "idle" | "countdown" | "work" | "rest" | "done";
 
 export interface TimerConfig {
   workSeconds: number;
@@ -55,7 +55,8 @@ export function useIntervalTimer(): TimerState & TimerActions {
       setPhase(newPhase);
       setTimeRemaining(duration);
 
-      if (newPhase === "work") playWork();
+      if (newPhase === "countdown") playCountdown(3);
+      else if (newPhase === "work") playWork();
       else if (newPhase === "rest") playRest();
       else if (newPhase === "done") playFinish();
     },
@@ -69,9 +70,14 @@ export function useIntervalTimer(): TimerState & TimerActions {
     setTimeRemaining(timeRef.current);
 
     const cfg = configRef.current!;
+    const t = timeRef.current;
+
+    // Play 3-2-1 sounds during countdown phase (3 is played at entry)
+    if (phaseRef.current === "countdown" && (t === 2 || t === 1)) {
+      playCountdown(t as 1 | 2);
+    }
 
     // Play 3-2-1 sounds during the last 3 seconds of work/rest phases
-    const t = timeRef.current;
     if (
       (phaseRef.current === "work" || phaseRef.current === "rest") &&
       (t === 3 || t === 2 || t === 1)
@@ -84,7 +90,12 @@ export function useIntervalTimer(): TimerState & TimerActions {
 
       const phase = phaseRef.current;
 
-      if (phase === "work") {
+      if (phase === "countdown") {
+        // After countdown → start first work set
+        currentSetRef.current = 1;
+        setCurrentSet(1);
+        transitionTo("work", cfg.workSeconds);
+      } else if (phase === "work") {
         // After work → rest
         transitionTo("rest", cfg.restSeconds);
       } else if (phase === "rest") {
@@ -113,15 +124,15 @@ export function useIntervalTimer(): TimerState & TimerActions {
     (config: TimerConfig) => {
       clearTick();
       configRef.current = config;
-      currentSetRef.current = 1;
+      currentSetRef.current = 0;
       isPausedRef.current = false;
 
-      setCurrentSet(1);
+      setCurrentSet(0);
       setTotalSets(config.sets);
       setIsPaused(false);
 
-      // Start directly into the first work phase
-      transitionTo("work", config.workSeconds);
+      // Begin with a 3-2-1 countdown before the first work phase
+      transitionTo("countdown", 3);
     },
     [clearTick, transitionTo],
   );
