@@ -6,9 +6,11 @@ interface ProgressRingProps {
   color: string;
   /** When provided, a gradient ramps from `color` toward `urgentColor` as progress decreases */
   urgentColor?: string;
+  /** Unique ID for the SVG gradient element — prevents conflicts when multiple rings are on screen */
+  gradientId?: string;
 }
 
-export function ProgressRing({ progress, color, urgentColor }: ProgressRingProps) {
+export function ProgressRing({ progress, color, urgentColor, gradientId = "ring-grad" }: ProgressRingProps) {
   const offset = RING_CIRCUMFERENCE * (1 - progress);
   const useGradient = !!urgentColor;
   // The urgency color bleeds in from the leading edge as progress decreases.
@@ -25,7 +27,7 @@ export function ProgressRing({ progress, color, urgentColor }: ProgressRingProps
     >
       {useGradient && (
         <defs>
-          <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={color} />
             <stop offset={urgentStopOffset} stopColor={urgentColor} />
             <stop offset="100%" stopColor={urgentColor} />
@@ -47,7 +49,7 @@ export function ProgressRing({ progress, color, urgentColor }: ProgressRingProps
         cy="140"
         r={RING_RADIUS}
         fill="none"
-        stroke={useGradient ? "url(#ring-grad)" : color}
+        stroke={useGradient ? `url(#${gradientId})` : color}
         strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={RING_CIRCUMFERENCE}

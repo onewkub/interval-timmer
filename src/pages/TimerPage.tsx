@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useId } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Volume2, VolumeX } from "lucide-react";
 import { useIntervalTimer } from "@/hooks/useIntervalTimer";
@@ -8,11 +8,22 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { ProgressRing } from "@/components/timer/ProgressRing";
 import { PHASE_STYLES } from "@/components/timer/phaseStyles";
 
+/** Maximum opacity of the background intensity ramp overlay (0–1). */
+const MAX_BG_INTENSITY_OPACITY = 0.18;
+
+/** Base RGB values for the intensity-ramp overlay, keyed by phase. */
+const BG_OVERLAY_RGB: Partial<Record<string, string>> = {
+  work: "234,88,12",   // matches work phase orange (Tailwind orange-600)
+  rest: "20,184,166",  // matches rest phase teal (Tailwind teal-500)
+};
+
 // ─── Timer Page ───────────────────────────────────────────────────────────────
 export function TimerPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const config = location.state as TimerConfig | null;
+  // Stable unique ID for the SVG gradient; scopes it to this component instance.
+  const gradientId = useId();
 
   const { muted, toggleMute } = useAudioSettings();
 
@@ -121,14 +132,12 @@ export function TimerPage() {
 
   // Background intensity: a translucent color overlay that brightens as time runs out.
   const bgIntensityOpacity = (phase === "work" || phase === "rest") && !isNearEnd
-    ? (1 - progress) * 0.18
+    ? (1 - progress) * MAX_BG_INTENSITY_OPACITY
     : 0;
-  const bgOverlayColor =
-    phase === "work"
-      ? `rgba(234,88,12,${bgIntensityOpacity})`
-      : phase === "rest"
-        ? `rgba(20,184,166,${bgIntensityOpacity})`
-        : "transparent";
+  const phaseRgb = BG_OVERLAY_RGB[phase];
+  const bgOverlayColor = phaseRgb
+    ? `rgba(${phaseRgb},${bgIntensityOpacity})`
+    : "transparent";
 
   return (
     // `isolate` creates a stacking context so z-index values on children are
@@ -205,6 +214,7 @@ export function TimerPage() {
             progress={progress}
             color={activeRingColor}
             urgentColor={urgentRingColor}
+            gradientId={gradientId}
           />
 
           <div className="absolute flex flex-col items-center">
