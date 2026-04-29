@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useId } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Volume2, VolumeX } from "lucide-react";
 import { useIntervalTimer } from "@/hooks/useIntervalTimer";
@@ -8,11 +8,22 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { ProgressRing } from "@/components/timer/ProgressRing";
 import { PHASE_STYLES } from "@/components/timer/phaseStyles";
 
+/** Maximum opacity of the background intensity ramp overlay (0–1). */
+const MAX_BG_INTENSITY_OPACITY = 0.18;
+
+/** Base RGB values for the intensity-ramp overlay, keyed by phase. */
+const BG_OVERLAY_RGB: Partial<Record<string, string>> = {
+  work: "234,88,12",   // matches work phase orange (Tailwind orange-600)
+  rest: "20,184,166",  // matches rest phase teal (Tailwind teal-500)
+};
+
 // ─── Timer Page ───────────────────────────────────────────────────────────────
 export function TimerPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const config = location.state as TimerConfig | null;
+  // Stable unique ID for the SVG gradient; scopes it to this component instance.
+  const gradientId = useId();
 
   const { muted, toggleMute } = useAudioSettings();
 
@@ -82,16 +93,80 @@ export function TimerPage() {
 
   const isActive = phase !== "idle" && phase !== "done";
 
+  // ── Feature 1: Urgency color shift ────────────────────────────────────────
+  // Trigger when ≤ last 10 s or ≤ 20% of the phase, whichever is shorter.
+  // Only applies to work / rest (not countdown).
+  const urgencyThreshold = Math.min(10, Math.ceil(phaseDuration * 0.2));
+  const isNearEnd =
+    (phase === "work" || phase === "rest") &&
+    timeRemaining > 0 &&
+    timeRemaining <= urgencyThreshold;
+
+  // ── Feature 2: Every-10-second palette cycling ────────────────────────────
+  const elapsed = phaseDuration - timeRemaining;
+  const paletteIndex =
+    style.colorPalette.length > 0
+      ? Math.floor(elapsed / 10) % style.colorPalette.length
+      : 0;
+
+  // Resolved ring color: urgency overrides palette, palette overrides default
+  const activeRingColor = isNearEnd
+    ? style.urgencyRingColor
+    : style.colorPalette.length > 0 && (phase === "work" || phase === "rest")
+      ? style.colorPalette[paletteIndex]
+      : style.ringColor;
+
+  // Resolved background gradient class
+  const activeBg = isNearEnd ? style.urgencyBg : style.bg;
+
+  // ── Feature 3: Last-3-second number bounce ────────────────────────────────
+  const isLastThree =
+    (phase === "work" || phase === "rest") &&
+    timeRemaining > 0 &&
+    timeRemaining <= 3;
+
+  // ── Feature 5 & 6: Ring gradient ramp + background intensity ramp ─────────
+  // urgentRingColor drives the SVG gradient in ProgressRing for work / rest.
+  const urgentRingColor =
+    phase === "work" || phase === "rest" ? style.urgencyRingColor : undefined;
+
+  // Background intensity: a translucent color overlay that brightens as time runs out.
+  const bgIntensityOpacity = (phase === "work" || phase === "rest") && !isNearEnd
+    ? (1 - progress) * MAX_BG_INTENSITY_OPACITY
+    : 0;
+  const phaseRgb = BG_OVERLAY_RGB[phase];
+  const bgOverlayColor = phaseRgb
+    ? `rgba(${phaseRgb},${bgIntensityOpacity})`
+    : "transparent";
+
   return (
+    // `isolate` creates a stacking context so z-index values on children are
+    // scoped to this container and overlays work as expected.
     <div
-      className={`flex min-h-svh flex-col items-center justify-between bg-linear-to-b ${style.bg} px-4 py-safe-or-8 transition-all duration-700`}
+      className={`isolate relative flex min-h-svh flex-col items-center justify-between overflow-hidden bg-linear-to-b ${activeBg} px-4 transition-all duration-700`}
       style={{
         paddingTop: "max(env(safe-area-inset-top, 0px), 2rem)",
         paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)",
       }}
     >
+      {/* Feature 6 — background intensity ramp (behind content, no z-index) */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundColor: bgOverlayColor,
+          transition: "background-color 1s ease",
+        }}
+      />
+
+      {/* Feature 4 — phase-transition flash overlay (above content, remounts on phase change) */}
+      <div
+        key={phase}
+        className="animate-phase-flash pointer-events-none absolute inset-0 z-50"
+        style={{ backgroundColor: style.ringColor }}
+      />
+
       {/* Top — set counter */}
-      <div className="flex w-full max-w-sm items-center justify-between pt-2">
+      <div className="relative z-10 flex w-full max-w-sm items-center justify-between pt-2">
         <button
           onClick={handleStop}
           aria-label="Stop and go back"
@@ -124,7 +199,7 @@ export function TimerPage() {
       </div>
 
       {/* Middle — ring + number + label */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="relative z-10 flex flex-col items-center gap-4">
         {/* Phase label */}
         <span
           className={`text-sm font-bold uppercase tracking-[0.25em] ${style.color} transition-colors duration-500`}
@@ -134,14 +209,25 @@ export function TimerPage() {
 
         {/* Ring with number inside */}
         <div className="relative flex items-center justify-center">
-          <ProgressRing progress={progress} color={style.ringColor} />
+          {/* Feature 5 — urgentColor drives the gradient ramp inside the ring */}
+          <ProgressRing
+            progress={progress}
+            color={activeRingColor}
+            urgentColor={urgentRingColor}
+            gradientId={gradientId}
+          />
 
           <div className="absolute flex flex-col items-center">
             {phase === "done" ? (
               <span className="text-6xl">🎉</span>
             ) : (
+              // Feature 3 — last-3-second number pop: re-keyed every second so
+              // the animation fires fresh each tick; bounces on 3-2-1.
               <span
-                className={`text-7xl font-bold tabular-nums text-white transition-all duration-300`}
+                key={isLastThree ? timeRemaining : "normal"}
+                className={`text-7xl font-bold tabular-nums text-white ${
+                  isLastThree ? "animate-number-pop" : "transition-all duration-300"
+                }`}
                 style={{ fontVariantNumeric: "tabular-nums" }}
               >
                 {timeRemaining}
@@ -169,7 +255,7 @@ export function TimerPage() {
       </div>
 
       {/* Bottom — controls */}
-      <div className="flex w-full max-w-sm flex-col items-center gap-3">
+      <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-3">
         {phase === "done" ? (
           <>
             <button
