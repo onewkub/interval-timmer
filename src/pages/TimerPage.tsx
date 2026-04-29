@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Volume2, VolumeX } from "lucide-react";
 import { useIntervalTimer } from "@/hooks/useIntervalTimer";
 import type { TimerConfig } from "@/hooks/useIntervalTimer";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { ProgressRing } from "@/components/timer/ProgressRing";
 import { PHASE_STYLES } from "@/components/timer/phaseStyles";
 
@@ -13,7 +14,6 @@ export function TimerPage() {
   const location = useLocation();
   const config = location.state as TimerConfig | null;
 
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const { muted, toggleMute } = useAudioSettings();
 
   const {
@@ -51,22 +51,8 @@ export function TimerPage() {
     };
   }, []);
 
-  // Wake Lock — keep screen on during workout
-  useEffect(() => {
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock
-        .request("screen")
-        .then((lock) => {
-          wakeLockRef.current = lock;
-        })
-        .catch(() => {
-          /* graceful degradation */
-        });
-    }
-    return () => {
-      wakeLockRef.current?.release().catch(() => {});
-    };
-  }, []);
+  // Wake Lock — keep screen on while timer is actively running
+  useWakeLock(phase !== "idle" && phase !== "done" && !isPaused);
 
   const handleStop = useCallback(() => {
     stop();
@@ -214,3 +200,4 @@ export function TimerPage() {
     </div>
   );
 }
+
