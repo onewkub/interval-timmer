@@ -158,6 +158,15 @@ export function TimerPage() {
         }}
       />
 
+      {/* Countdown per-second background blink */}
+      {phase === "countdown" && timeRemaining > 0 && (
+        <div
+          key={timeRemaining}
+          className="animate-countdown-blink pointer-events-none absolute inset-0"
+          style={{ backgroundColor: "#38bdf8" }}
+        />
+      )}
+
       {/* Feature 4 — phase-transition flash overlay (above content, remounts on phase change) */}
       <div
         key={phase}

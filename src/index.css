@@ -253,3 +253,12 @@ code {
 .animate-number-pop {
   animation: number-pop 0.35s ease-out forwards;
 }
+
+@keyframes countdown-blink {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0;    }
+}
+
+.animate-countdown-blink {
+  animation: countdown-blink 0.8s ease-out forwards;
+}
