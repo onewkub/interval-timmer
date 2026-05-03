@@ -1,8 +1,10 @@
-# Interval Timer
+# Simple Interval Timer
 
 A mobile-first workout interval timer built with React 19, TypeScript, and Tailwind CSS v4. Configure work/rest durations and number of sets, then go fullscreen with audio cues and a live progress ring.
 
-![Interval Timer screenshot](docs/screenshot.png)
+🚀 **[Live Demo → interval-timer.onew.dev](https://interval-timer.onew.dev)**
+
+![Simple Interval Timer screenshot](docs/screenshot.png)
 
 ## Features
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://interval-timer.onew.dev/sitemap.xml
