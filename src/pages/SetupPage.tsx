@@ -3,11 +3,13 @@ import { useNavigate } from "react-router";
 import { Volume2, VolumeX } from "lucide-react";
 import type { TimerConfig } from "@/hooks/useIntervalTimer";
 import { useAudioSettings } from "@/hooks/useAudioSettings";
-import { FIELDS, NumberInput } from "@/components/setup/NumberInput";
+import { NumberInput } from "@/components/setup/NumberInput";
+import { FIELDS } from "@/components/setup/setupField";
 
 export function SetupPage() {
   const navigate = useNavigate();
-  const { volume, muted, changeVolume, toggleMute } = useAudioSettings();
+  const { volume, muted, language, changeVolume, toggleMute, changeLanguage } =
+    useAudioSettings();
 
   const [config, setConfig] = useState<TimerConfig>({
     workSeconds: 40,
@@ -61,6 +63,27 @@ export function SetupPage() {
             className="w-28 accent-orange-400 disabled:opacity-30"
             aria-label="Volume"
           />
+        </div>
+
+        {/* Sound language toggle */}
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-white/40">Sound</span>
+          <div className="flex rounded-lg border border-white/10 p-0.5">
+            {(["th", "en"] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => changeLanguage(lang)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                  language === lang
+                    ? "bg-orange-500 text-white shadow"
+                    : "text-white/40 hover:text-white"
+                }`}
+                aria-pressed={language === lang}
+              >
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
