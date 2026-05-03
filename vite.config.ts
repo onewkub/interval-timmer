@@ -6,6 +6,8 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import { VitePWA } from "vite-plugin-pwa";
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
@@ -72,6 +74,7 @@ export default defineConfig({
         ],
       },
     }),
+    cloudflare()
   ],
   resolve: {
     alias: {
